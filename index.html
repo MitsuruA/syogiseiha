@@ -253,7 +253,6 @@
       </aside>
     </div>
 
-    <script src="./win-lose-sound.js"></script>
     <script type="module">
       import {
         generatePseudoLegalMovesForSquare,
@@ -489,10 +488,6 @@
           captured[movingPiece.side].push(capturedType);
           if (targetCell.type === PIECE.OSHO) {
             const winnerSideLabel = movingPiece.side === 'SENTE' ? '先手' : '後手';
-            const opponentSideLabel = movingPiece.side === 'SENTE' ? '後手' : '先手';
-            if (window.showWinMessage) {
-              window.showWinMessage(opponentSideLabel);
-            }
             statusMessageEl.textContent = `${winnerSideLabel}が王将を捕獲しました！`;
           }
         }
