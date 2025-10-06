@@ -104,3 +104,34 @@ function mustPromote(pieceId, player, toY) {
 * 描画は y=8→0 の順で上から下へ表示される。
 
 ---
+
+# 12. アセット構成（新設）
+
+## ディレクトリ構成
+
+```
+assets/
+  audio/
+    sfx/
+      move.mp3   # 駒を移動させたときの効果音
+      win.mp3    # 勝利演出用サウンド
+      lose.mp3   # 敗北演出用サウンド
+  pieces/
+    FUHYO.png        # 歩兵（先後共通、後手は自動回転表示）
+    KYOSHA.png
+    KEIMA.png
+    GINSHO.png
+    KINSHO.png
+    KAKUGYO.png
+    HISHA.png
+    OSHO.png
+    TOKIN.png
+    NARIKYOSHA.png
+    NARIKEIMA.png
+    NARIGINSHO.png
+    RYUMA.png
+    RYUO.png
+```
+
+* 音声ファイルは `assets/audio/sfx/` に配置することで、`win-lose-sound.js` や `feature/ui-win-lose` からパスを統一して参照できます。
+* 駒画像は英字の駒名で PNG を用意してください（例：`FUHYO.png`）。後手分は自動回転するため 1 枚で共通利用できます。
