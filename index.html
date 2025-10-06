@@ -432,31 +432,30 @@
       }
 
       const PIECE_IMAGE_FILES = {
-        [PIECE.FUHYO]: 'FUHYO.png',
-        [PIECE.KYOSHA]: 'KYOSHA.png',
-        [PIECE.KEIMA]: 'KEIMA.png',
-        [PIECE.GINSHO]: 'GINSHO.png',
-        [PIECE.KINSHO]: 'KINSHO.png',
-        [PIECE.KAKUGYO]: 'KAKUGYO.png',
-        [PIECE.HISHA]: 'HISHA.png',
-        [PIECE.OSHO]: 'OSHO.png',
-        [PIECE.TOKIN]: 'TOKIN.png',
-        [PIECE.NARIKYOSHA]: 'NARIKYOSHA.png',
-        [PIECE.NARIKEIMA]: 'NARIKEIMA.png',
-        [PIECE.NARIGINSHO]: 'NARIGINSHO.png',
-        [PIECE.RYUMA]: 'RYUMA.png',
-        [PIECE.RYUO]: 'RYUO.png'
+        [PIECE.FUHYO]: 'assets/pieces/FUHYO.png',
+        [PIECE.KYOSHA]: 'assets/pieces/KYOSHA.png',
+        [PIECE.KEIMA]: 'assets/pieces/KEIMA.png',
+        [PIECE.GINSHO]: 'assets/pieces/GINSHO.png',
+        [PIECE.KINSHO]: 'assets/pieces/KINSHO.png',
+        [PIECE.KAKUGYO]: 'assets/pieces/KAKUGYO.png',
+        [PIECE.HISHA]: 'assets/pieces/HISHA.png',
+        [PIECE.OSHO]: 'assets/pieces/OSHO.png',
+        [PIECE.TOKIN]: 'assets/pieces/TOKIN.png',
+        [PIECE.NARIKYOSHA]: 'assets/pieces/NARIKYOSHA.png',
+        [PIECE.NARIKEIMA]: 'assets/pieces/NARIKEIMA.png',
+        [PIECE.NARIGINSHO]: 'assets/pieces/NARIGINSHO.png',
+        [PIECE.RYUMA]: 'assets/pieces/RYUMA.png',
+        [PIECE.RYUO]: 'assets/pieces/RYUO.png'
       };
 
-      const PIECE_IMAGE_FALLBACK = 'black_king2.png';
+      const PIECE_IMAGE_FALLBACK = 'assets/pieces/black_king2.png';
 
       function getPieceImagePath(type) {
         const fileName = PIECE_IMAGE_FILES[type];
         if (!fileName) {
           console.warn(`Unknown piece type: ${type}`);
         }
-        const assetPath = `./assets/pieces/${fileName ?? PIECE_IMAGE_FALLBACK}`;
-        return new URL(assetPath, import.meta.url).href;
+        return new URL(fileName ?? PIECE_IMAGE_FALLBACK, import.meta.url).href;
       }
 
       const moveSound = new Audio('./assets/audio/sfx/move.mp3');
