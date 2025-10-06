@@ -436,6 +436,9 @@
         return `./assets/pieces/${type}.png`;
       }
 
+      const moveSound = new Audio('./assets/audio/sfx/move.mp3');
+      moveSound.preload = 'auto';
+
       function onSquareClick(event) {
         const button = event.currentTarget;
         const x = Number(button.dataset.x);
@@ -492,6 +495,12 @@
             }
             statusMessageEl.textContent = `${winnerSideLabel}が王将を捕獲しました！`;
           }
+        }
+
+        moveSound.currentTime = 0;
+        const playPromise = moveSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
         }
 
         boardState = applyMove(boardState, moveTo, turn);
