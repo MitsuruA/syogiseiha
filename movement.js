@@ -2,8 +2,9 @@
 // ─────────────────────────────────────────────────────────────
 // 将棋の「コマごとの動き」ロジック（成り駒含む）の擬似合法手生成
 // 反則（打ち制約・二歩・王手放置など）は未チェック。後でフィルタを追加してください。
-// 先手(SENTE)は盤の下側→上方向へ進む（dy = -1）、後手(GOTE)はその逆。
-// 盤は board[y][x] で参照。マスは null または { side: 'SENTE'|'GOTE', type: PieceType }。
+// 座標系は左下を (0,0) とし、右および上へ進むほど値が増える。
+// 先手(SENTE)は盤の下側→上方向へ進む（dy = +1）、後手(GOTE)はその逆。
+// 盤は board[y][x] で参照（board[0] が最下段）。マスは null または { side: 'SENTE'|'GOTE', type: PieceType }。
 // ─────────────────────────────────────────────────────────────
 
 /** @typedef {'SENTE' | 'GOTE'} Side */
@@ -14,9 +15,9 @@
 /** @typedef {{x:number, y:number}} Square */
 /** @typedef {{from:Square, to:Square, piece:PieceType, capture:boolean}} Move */
 
-/** 方向ベクトル（先手基準：上が -1） */
-const ORTHO = { L: [-1, 0], U: [0, -1], R: [1, 0], D: [0, 1] };
-const DIAG  = { UL: [-1, -1], UR: [1, -1], DL: [-1, 1], DR: [1, 1] };
+/** 方向ベクトル（先手基準：上が +1） */
+const ORTHO = { L: [-1, 0], U: [0, 1], R: [1, 0], D: [0, -1] };
+const DIAG  = { UL: [-1, 1], UR: [1, 1], DL: [-1, -1], DR: [1, -1] };
 
 /** 金将の一歩（先手基準：斜め後ろは行かない） */
 const GOLD_STEPS = [DIAG.UL, ORTHO.U, DIAG.UR, ORTHO.L, ORTHO.D, ORTHO.R];
@@ -61,7 +62,7 @@ const RULES = /** @type {Record<PieceType, {
 }>} */ ({
   FUHYO: { stepDirs: [ORTHO.U] },
   KYOSHA: { slideDirs: [ORTHO.U] },
-  KEIMA: { knightJumps: [[-1, -2], [1, -2]] }, // 先手基準（後手はy反転）
+  KEIMA: { knightJumps: [[-1, 2], [1, 2]] }, // 先手基準（後手はy反転）
   GINSHO: { stepDirs: SILVER_STEPS },
   KINSHO: { stepDirs: GOLD_STEPS },
   KAKUGYO: { slideDirs: BISHOP_SLIDES },
@@ -167,9 +168,9 @@ export function generatePseudoLegalMoves(board, side) {
 // const emptyRow = Array.from({length:9}, () => null);
 // const board = Array.from({length:9}, () => emptyRow.map(()=>null));
 //
-// // 先手の歩を(4,6)、後手の歩を(4,2) に置く（y増加は下方向）
-// board[6][4] = { side:'SENTE', type:'FUHYO' };
-// board[2][4] = { side:'GOTE',  type:'FUHYO' };
+// // 先手の歩を(4,2)、後手の歩を(4,6) に置く（y増加は上方向）
+// board[2][4] = { side:'SENTE', type:'FUHYO' };
+// board[6][4] = { side:'GOTE',  type:'FUHYO' };
 //
 // // 先手の手を生成
 // const moves = generatePseudoLegalMoves(board, 'SENTE');
