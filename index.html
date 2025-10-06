@@ -455,7 +455,7 @@
         if (!fileName) {
           console.warn(`Unknown piece type: ${type}`);
         }
-        return new URL(fileName ?? PIECE_IMAGE_FALLBACK, import.meta.url).href;
+        return fileName ?? PIECE_IMAGE_FALLBACK;
       }
 
       const moveSound = new Audio('./assets/audio/sfx/move.mp3');
