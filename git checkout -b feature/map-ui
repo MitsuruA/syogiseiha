@@ -1,0 +1,110 @@
+/* ========================================
+  map.js - 日本地図クリックUI（B担当用）
+  - 純JS + SVG
+  - 都道府県クリックで選択
+  - 攻略済み県は青、未攻略は灰色
+  - クリック時に startShogiBattle(prefName) 呼び出し
+======================================== */
+
+// 依存: japan.geojson を /assets/japan.geojson に配置しておく
+const GEOJSON_URL = './assets/japan.geojson';
+
+// 攻略済み県を保持（localStorage対応）
+let clearedPrefectures = JSON.parse(localStorage.getItem('clearedPrefectures')) || [];
+
+// SVGの幅・高さ
+const WIDTH = 980;
+const HEIGHT = 1200;
+
+// 地図描画先のdiv
+const mapContainer = document.getElementById('map-container');
+
+// Tooltip（県名表示用）
+const tooltip = document.createElement('div');
+tooltip.style.position = 'absolute';
+tooltip.style.padding = '4px 8px';
+tooltip.style.background = 'rgba(0,0,0,0.7)';
+tooltip.style.color = '#fff';
+tooltip.style.borderRadius = '4px';
+tooltip.style.pointerEvents = 'none';
+tooltip.style.display = 'none';
+document.body.appendChild(tooltip);
+
+// GeoJSON読み込みと描画
+fetch(GEOJSON_URL)
+  .then(res => res.json())
+  .then(data => drawMap(data));
+
+function drawMap(geojson) {
+  // SVG作成
+  const svgns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgns, 'svg');
+  svg.setAttribute('width', WIDTH);
+  svg.setAttribute('height', HEIGHT);
+  svg.style.border = '1px solid #ccc';
+
+  // 投影変換（簡易版: 緯度経度→SVG座標）
+  const projection = (lon, lat) => {
+    // 日本中心を (137, 37) としてスケーリング
+    const scale = 10; // 調整可
+    const x = (lon - 122) * scale; // 左端: 122°E
+    const y = (45 - lat) * scale;  // 上端: 45°N
+    return [x + 20, y + 20]; // 少しマージン
+  };
+
+  geojson.features.forEach(feature => {
+    const name = feature.properties.N03_004 || feature.properties.name || '不明';
+    const pathData = feature.geometry.coordinates.map(polygon => {
+      // MultiPolygon対応
+      if (feature.geometry.type === 'MultiPolygon') {
+        return polygon.map(ring => 'M' + ring.map(coord => projection(coord[0], coord[1]).join(',')).join('L') + 'Z').join(' ');
+      } else {
+        return 'M' + polygon.map(coord => projection(coord[0], coord[1]).join(',')).join('L') + 'Z';
+      }
+    }).join(' ');
+
+    const path = document.createElementNS(svgns, 'path');
+    path.setAttribute('d', pathData);
+    path.setAttribute('fill', clearedPrefectures.includes(name) ? '#1f6feb' : '#e6eef8');
+    path.setAttribute('stroke', '#97b0d9');
+    path.setAttribute('stroke-width', '0.5');
+
+    // ホバー
+    path.addEventListener('mouseenter', e => {
+      tooltip.style.display = 'block';
+      tooltip.innerText = name;
+    });
+    path.addEventListener('mousemove', e => {
+      tooltip.style.left = (e.pageX + 10) + 'px';
+      tooltip.style.top = (e.pageY + 10) + 'px';
+    });
+    path.addEventListener('mouseleave', e => {
+      tooltip.style.display = 'none';
+    });
+
+    // クリックでバトル開始
+    path.addEventListener('click', e => {
+      startShogiBattle(name);
+    });
+
+    svg.appendChild(path);
+  });
+
+  mapContainer.appendChild(svg);
+}
+
+// 攻略済みにマークする関数
+function markCleared(prefName) {
+  if (!clearedPrefectures.includes(prefName)) {
+    clearedPrefectures.push(prefName);
+    localStorage.setItem('clearedPrefectures', JSON.stringify(clearedPrefectures));
+    alert(`${prefName} を攻略済みにしました！`);
+    location.reload(); // 簡易リロードで色更新
+  }
+}
+
+// クリック時に呼び出される関数（shogi.js で処理予定）
+function startShogiBattle(prefName) {
+  alert(`ここで ${prefName} の武将と将棋対局を開始！`);
+  // 実際は shogi.js で盤面表示 & ゲーム開始
+}
