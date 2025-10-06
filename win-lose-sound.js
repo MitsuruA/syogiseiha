@@ -5,9 +5,9 @@
 ======================================== */
 
 // 勝利用サウンド
-const winSound = new Audio('./assets/sounds/win.mp3');
+const winSound = new Audio('./assets/audio/sfx/win.mp3');
 // 敗北用サウンド（替え歌元音源）
-const loseSound = new Audio('./assets/sounds/lose.mp3');
+const loseSound = new Audio('./assets/audio/sfx/lose.mp3');
 
 // メッセージ表示用div
 const messageDiv = document.createElement('div');

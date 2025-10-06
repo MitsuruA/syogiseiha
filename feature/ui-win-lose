@@ -8,9 +8,9 @@
 // ----------------------------
 // 音声ファイル読み込み
 // ----------------------------
-const moveSound = new Audio('./assets/sounds/move.mp3'); // 駒を動かした音
-const winSound  = new Audio('./assets/sounds/win.mp3');  // 勝利音
-const loseSound = new Audio('./assets/sounds/lose.mp3'); // 敗北音
+const moveSound = new Audio('./assets/audio/sfx/move.mp3'); // 駒を動かした音
+const winSound  = new Audio('./assets/audio/sfx/win.mp3');  // 勝利音
+const loseSound = new Audio('./assets/audio/sfx/lose.mp3'); // 敗北音
 
 // ----------------------------
 // メッセージ表示用 div を作成
@@ -52,9 +52,9 @@ function showWinMessage(prefName) {
 ======================================== */
 
 // 勝利用サウンドファイルを読み込む
-const winSound = new Audio('./assets/sounds/win.mp3');
+const winSound = new Audio('./assets/audio/sfx/win.mp3');
 // 敗北用サウンドファイルを読み込む
-const loseSound = new Audio('./assets/sounds/lose.mp3');
+const loseSound = new Audio('./assets/audio/sfx/lose.mp3');
 
 // メッセージ表示用の div を作成して画面に追加
 const messageDiv = document.createElement('div');
