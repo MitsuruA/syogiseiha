@@ -431,8 +431,32 @@
         return map[type] ?? type;
       }
 
+      const PIECE_IMAGE_FILES = {
+        [PIECE.FUHYO]: 'FUHYO.png',
+        [PIECE.KYOSHA]: 'KYOSHA.png',
+        [PIECE.KEIMA]: 'KEIMA.png',
+        [PIECE.GINSHO]: 'GINSHO.png',
+        [PIECE.KINSHO]: 'KINSHO.png',
+        [PIECE.KAKUGYO]: 'KAKUGYO.png',
+        [PIECE.HISHA]: 'HISHA.png',
+        [PIECE.OSHO]: 'OSHO.png',
+        [PIECE.TOKIN]: 'TOKIN.png',
+        [PIECE.NARIKYOSHA]: 'NARIKYOSHA.png',
+        [PIECE.NARIKEIMA]: 'NARIKEIMA.png',
+        [PIECE.NARIGINSHO]: 'NARIGINSHO.png',
+        [PIECE.RYUMA]: 'RYUMA.png',
+        [PIECE.RYUO]: 'RYUO.png'
+      };
+
+      const PIECE_IMAGE_FALLBACK = 'black_king2.png';
+
       function getPieceImagePath(type) {
-        return `./assets/pieces/${type}.png`;
+        const fileName = PIECE_IMAGE_FILES[type];
+        if (!fileName) {
+          console.warn(`Unknown piece type: ${type}`);
+        }
+        const assetPath = `./assets/pieces/${fileName ?? PIECE_IMAGE_FALLBACK}`;
+        return new URL(assetPath, import.meta.url).href;
       }
 
       const moveSound = new Audio('./assets/audio/sfx/move.mp3');
