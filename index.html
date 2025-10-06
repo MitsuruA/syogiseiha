@@ -253,7 +253,6 @@
       </aside>
     </div>
 
-    <script src="./win-lose-sound.js"></script>
     <script type="module">
       import {
         generatePseudoLegalMovesForSquare,
@@ -436,6 +435,9 @@
         return `./assets/pieces/${type}.png`;
       }
 
+      const moveSound = new Audio('./assets/audio/sfx/move.mp3');
+      moveSound.preload = 'auto';
+
       function onSquareClick(event) {
         const button = event.currentTarget;
         const x = Number(button.dataset.x);
@@ -486,12 +488,14 @@
           captured[movingPiece.side].push(capturedType);
           if (targetCell.type === PIECE.OSHO) {
             const winnerSideLabel = movingPiece.side === 'SENTE' ? '先手' : '後手';
-            const opponentSideLabel = movingPiece.side === 'SENTE' ? '後手' : '先手';
-            if (window.showWinMessage) {
-              window.showWinMessage(opponentSideLabel);
-            }
             statusMessageEl.textContent = `${winnerSideLabel}が王将を捕獲しました！`;
           }
+        }
+
+        moveSound.currentTime = 0;
+        const playPromise = moveSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
         }
 
         boardState = applyMove(boardState, moveTo, turn);
