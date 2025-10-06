@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>地方武将撃退将棋</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --square-size: min(9vw, 72px);
+        --board-border: #8b5a2b;
+        --board-light: #f5deb3;
+        --board-dark: #e0c38c;
+        --highlight-move: rgba(65, 173, 255, 0.45);
+        --highlight-capture: rgba(255, 99, 71, 0.55);
+        --highlight-selected: rgba(255, 215, 0, 0.55);
+        --panel-bg: rgba(255, 255, 255, 0.7);
+        font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        background: radial-gradient(circle at top, #f9f5ec, #e4d6b8 55%, #c8b291);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: auto minmax(220px, 1fr);
+        gap: 1.5rem;
+        max-width: 1200px;
+        width: 100%;
+      }
+
+      .board-wrapper {
+        padding: 1rem;
+        border: 6px solid var(--board-border);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.35);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(9, var(--square-size));
+        grid-template-rows: repeat(9, var(--square-size));
+        border: 4px solid var(--board-border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .square {
+        position: relative;
+        width: var(--square-size);
+        height: var(--square-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--board-light);
+      }
+
+      .square.dark {
+        background: var(--board-dark);
+      }
+
+      .square button {
+        appearance: none;
+        border: none;
+        background: none;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      .square button:focus-visible {
+        outline: 3px solid rgba(0, 120, 215, 0.8);
+        outline-offset: -6px;
+      }
+
+      .piece-img {
+        max-width: 80%;
+        max-height: 80%;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+        transition: transform 0.15s ease;
+      }
+
+      .piece-gote {
+        transform: rotate(180deg);
+      }
+
+      .highlight-move::after,
+      .highlight-capture::after,
+      .highlight-selected::after {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        border-radius: 8px;
+      }
+
+      .highlight-move::after {
+        background: var(--highlight-move);
+      }
+
+      .highlight-capture::after {
+        background: var(--highlight-capture);
+      }
+
+      .highlight-selected::after {
+        background: var(--highlight-selected);
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 16px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.15);
+      }
+
+      .panel h1 {
+        margin: 0;
+        font-size: 1.75rem;
+      }
+
+      .panel section {
+        display: grid;
+        gap: 0.25rem;
+      }
+
+      .panel p {
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      .status-label {
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .hands {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.5rem;
+        font-size: 0.95rem;
+      }
+
+      .hands span {
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      .controls {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .controls button {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 0.55rem 1.4rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(120deg, #c6933a, #eec97b);
+        color: #3f2f13;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .controls button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+      }
+
+      .coords {
+        position: absolute;
+        font-size: 0.65rem;
+        color: rgba(0, 0, 0, 0.45);
+      }
+
+      .coords.file {
+        top: 4px;
+        right: 4px;
+      }
+
+      .coords.rank {
+        bottom: 4px;
+        left: 4px;
+      }
+
+      @media (max-width: 1024px) {
+        :root {
+          --square-size: min(10vw, 64px);
+        }
+        body {
+          padding: 1rem;
+        }
+        .app {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="board-wrapper">
+        <div id="board" class="board" aria-label="将棋盤"></div>
+      </div>
+      <aside class="panel">
+        <h1>地方武将撃退将棋</h1>
+        <section>
+          <span class="status-label">手番：</span>
+          <p id="turn-indicator">先手</p>
+        </section>
+        <section>
+          <span class="status-label">状況：</span>
+          <p id="status-message">駒をクリックして合法手を確認しましょう。</p>
+        </section>
+        <section>
+          <span class="status-label">持ち駒（先手）</span>
+          <div id="hand-sente" class="hands"></div>
+        </section>
+        <section>
+          <span class="status-label">持ち駒（後手）</span>
+          <div id="hand-gote" class="hands"></div>
+        </section>
+        <section class="controls">
+          <button id="reset-button" type="button">初期配置に戻す</button>
+          <button id="pass-button" type="button">手番を交代</button>
+        </section>
+        <section>
+          <span class="status-label">画像配置について</span>
+          <p>
+            <code>assets/pieces/</code> フォルダに、
+            <code>FUHYO.png</code> のように各駒名（英字）で画像を配置してください。
+            後手の駒は自動的に180°回転して表示されます。
+          </p>
+        </section>
+      </aside>
+    </div>
+
+    <script src="./win-lose-sound.js"></script>
+    <script type="module">
+      import {
+        generatePseudoLegalMovesForSquare,
+        generatePseudoLegalMoves
+      } from './movement.js';
+      import {
+        PIECE,
+        filterIllegalMoves,
+        applyMove,
+        opposite,
+        inCheck
+      } from './rules.js';
+
+      const boardEl = document.getElementById('board');
+      const statusMessageEl = document.getElementById('status-message');
+      const turnIndicatorEl = document.getElementById('turn-indicator');
+      const handEl = {
+        SENTE: document.getElementById('hand-sente'),
+        GOTE: document.getElementById('hand-gote')
+      };
+      const resetButton = document.getElementById('reset-button');
+      const passButton = document.getElementById('pass-button');
+
+      const PROMOTION_MAP = {
+        [PIECE.FUHYO]: PIECE.TOKIN,
+        [PIECE.KYOSHA]: PIECE.NARIKYOSHA,
+        [PIECE.KEIMA]: PIECE.NARIKEIMA,
+        [PIECE.GINSHO]: PIECE.NARIGINSHO,
+        [PIECE.KAKUGYO]: PIECE.RYUMA,
+        [PIECE.HISHA]: PIECE.RYUO
+      };
+
+      const UNPROMOTE_MAP = {
+        [PIECE.TOKIN]: PIECE.FUHYO,
+        [PIECE.NARIKYOSHA]: PIECE.KYOSHA,
+        [PIECE.NARIKEIMA]: PIECE.KEIMA,
+        [PIECE.NARIGINSHO]: PIECE.GINSHO,
+        [PIECE.RYUMA]: PIECE.KAKUGYO,
+        [PIECE.RYUO]: PIECE.HISHA
+      };
+
+      const PROMOTION_ELIGIBLE = new Set(Object.keys(PROMOTION_MAP));
+
+      const BOARD_SIZE = 9;
+      const FILE_LABELS = ['9', '8', '7', '6', '5', '4', '3', '2', '1'];
+      const RANK_LABELS = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+      let boardState = createInitialBoard();
+      let turn = 'SENTE';
+      let selectedSquare = null;
+      let legalMoves = [];
+      const captured = { SENTE: [], GOTE: [] };
+
+      function createInitialBoard() {
+        /** @type {{side:'SENTE'|'GOTE',type:import('./movement.js').PieceType}|null}[][] */
+        const emptyRow = Array.from({ length: BOARD_SIZE }, () => null);
+        const board = Array.from({ length: BOARD_SIZE }, () => [...emptyRow]);
+
+        // 先手側の配置（y=0 が自陣最下段）
+        board[0] = [
+          { side: 'SENTE', type: PIECE.KYOSHA },
+          { side: 'SENTE', type: PIECE.KEIMA },
+          { side: 'SENTE', type: PIECE.GINSHO },
+          { side: 'SENTE', type: PIECE.KINSHO },
+          { side: 'SENTE', type: PIECE.OSHO },
+          { side: 'SENTE', type: PIECE.KINSHO },
+          { side: 'SENTE', type: PIECE.GINSHO },
+          { side: 'SENTE', type: PIECE.KEIMA },
+          { side: 'SENTE', type: PIECE.KYOSHA }
+        ];
+        board[1][1] = { side: 'SENTE', type: PIECE.HISHA };
+        board[1][7] = { side: 'SENTE', type: PIECE.KAKUGYO };
+        board[2] = Array.from({ length: BOARD_SIZE }, () => ({ side: 'SENTE', type: PIECE.FUHYO }));
+
+        // 後手側（y=8 が相手陣最下段＝盤の上）
+        board[8] = [
+          { side: 'GOTE', type: PIECE.KYOSHA },
+          { side: 'GOTE', type: PIECE.KEIMA },
+          { side: 'GOTE', type: PIECE.GINSHO },
+          { side: 'GOTE', type: PIECE.KINSHO },
+          { side: 'GOTE', type: PIECE.OSHO },
+          { side: 'GOTE', type: PIECE.KINSHO },
+          { side: 'GOTE', type: PIECE.GINSHO },
+          { side: 'GOTE', type: PIECE.KEIMA },
+          { side: 'GOTE', type: PIECE.KYOSHA }
+        ];
+        board[7][7] = { side: 'GOTE', type: PIECE.HISHA };
+        board[7][1] = { side: 'GOTE', type: PIECE.KAKUGYO };
+        board[6] = Array.from({ length: BOARD_SIZE }, () => ({ side: 'GOTE', type: PIECE.FUHYO }));
+
+        return board;
+      }
+
+      function cloneBoardState() {
+        return boardState.map(row => row.map(cell => (cell ? { ...cell } : null)));
+      }
+
+      function resetGame() {
+        boardState = createInitialBoard();
+        turn = 'SENTE';
+        selectedSquare = null;
+        legalMoves = [];
+        captured.SENTE = [];
+        captured.GOTE = [];
+        updateTurnIndicator();
+        updateStatus();
+        renderBoard();
+        renderHands();
+      }
+
+      function renderBoard() {
+        boardEl.innerHTML = '';
+        for (let renderY = BOARD_SIZE - 1; renderY >= 0; renderY--) {
+          for (let x = 0; x < BOARD_SIZE; x++) {
+            const squareEl = document.createElement('div');
+            squareEl.className = 'square';
+            if ((renderY + x) % 2 === 1) {
+              squareEl.classList.add('dark');
+            }
+
+            const y = renderY;
+            const moveOnSquare = legalMoves.find(mv => mv.to.x === x && mv.to.y === y);
+            if (selectedSquare && selectedSquare.x === x && selectedSquare.y === y) {
+              squareEl.classList.add('highlight-selected');
+            } else if (moveOnSquare) {
+              squareEl.classList.add(moveOnSquare.capture ? 'highlight-capture' : 'highlight-move');
+            }
+
+            const button = document.createElement('button');
+            button.dataset.x = String(x);
+            button.dataset.y = String(y);
+
+            const cell = boardState[y][x];
+            if (cell) {
+              const img = document.createElement('img');
+              img.src = getPieceImagePath(cell.type);
+              img.alt = `${cell.side === 'SENTE' ? '先手' : '後手'} ${pieceLabel(cell.type)}`;
+              img.className = 'piece-img' + (cell.side === 'GOTE' ? ' piece-gote' : '');
+              button.appendChild(img);
+            }
+
+            const fileLabel = document.createElement('span');
+            fileLabel.className = 'coords file';
+            fileLabel.textContent = FILE_LABELS[x];
+            squareEl.appendChild(fileLabel);
+
+            const rankLabel = document.createElement('span');
+            rankLabel.className = 'coords rank';
+            rankLabel.textContent = RANK_LABELS[y];
+            squareEl.appendChild(rankLabel);
+
+            button.addEventListener('click', onSquareClick);
+            squareEl.appendChild(button);
+            boardEl.appendChild(squareEl);
+          }
+        }
+      }
+
+      function pieceLabel(type) {
+        const map = {
+          [PIECE.FUHYO]: '歩兵',
+          [PIECE.KYOSHA]: '香車',
+          [PIECE.KEIMA]: '桂馬',
+          [PIECE.GINSHO]: '銀将',
+          [PIECE.KINSHO]: '金将',
+          [PIECE.KAKUGYO]: '角行',
+          [PIECE.HISHA]: '飛車',
+          [PIECE.OSHO]: '王将',
+          [PIECE.TOKIN]: 'と金',
+          [PIECE.NARIKYOSHA]: '成香',
+          [PIECE.NARIKEIMA]: '成桂',
+          [PIECE.NARIGINSHO]: '成銀',
+          [PIECE.RYUMA]: '竜馬',
+          [PIECE.RYUO]: '竜王'
+        };
+        return map[type] ?? type;
+      }
+
+      function getPieceImagePath(type) {
+        return `./assets/pieces/${type}.png`;
+      }
+
+      function onSquareClick(event) {
+        const button = event.currentTarget;
+        const x = Number(button.dataset.x);
+        const y = Number(button.dataset.y);
+        const cell = boardState[y][x];
+
+        const move = legalMoves.find(mv => mv.to.x === x && mv.to.y === y);
+        if (move && selectedSquare) {
+          handleMove(selectedSquare, move);
+          return;
+        }
+
+        if (cell && cell.side === turn) {
+          selectedSquare = { x, y };
+          const pseudo = generatePseudoLegalMovesForSquare(boardState, x, y);
+          legalMoves = filterIllegalMoves(boardState, pseudo, turn);
+          if (legalMoves.length === 0) {
+            statusMessageEl.textContent = 'この駒に指せる手はありません。';
+          } else {
+            statusMessageEl.textContent = `${pieceLabel(cell.type)}の指し手を選んでください。`;
+          }
+        } else {
+          selectedSquare = null;
+          legalMoves = [];
+          if (cell && cell.side !== turn) {
+            statusMessageEl.textContent = '相手の駒です。自分の駒を選択してください。';
+          } else {
+            statusMessageEl.textContent = '駒をクリックして選択してください。';
+          }
+        }
+        renderBoard();
+      }
+
+      function handleMove(fromSquare, move) {
+        const { x: fromX, y: fromY } = fromSquare;
+        const movingPiece = boardState[fromY][fromX];
+        if (!movingPiece) return;
+
+        const moveTo = { ...move };
+        const promotionTarget = PROMOTION_MAP[movingPiece.type];
+        if (promotionTarget && shouldPromote(movingPiece.type, movingPiece.side, fromY, move.to.y)) {
+          moveTo.promoteTo = promotionTarget;
+        }
+
+        const targetCell = boardState[move.to.y][move.to.x];
+        if (targetCell) {
+          const capturedType = UNPROMOTE_MAP[targetCell.type] ?? targetCell.type;
+          captured[movingPiece.side].push(capturedType);
+          if (targetCell.type === PIECE.OSHO) {
+            const winnerSideLabel = movingPiece.side === 'SENTE' ? '先手' : '後手';
+            const opponentSideLabel = movingPiece.side === 'SENTE' ? '後手' : '先手';
+            if (window.showWinMessage) {
+              window.showWinMessage(opponentSideLabel);
+            }
+            statusMessageEl.textContent = `${winnerSideLabel}が王将を捕獲しました！`;
+          }
+        }
+
+        boardState = applyMove(boardState, moveTo, turn);
+        turn = opposite(turn);
+        selectedSquare = null;
+        legalMoves = [];
+        renderBoard();
+        renderHands();
+        updateTurnIndicator();
+        updateStatus();
+        checkForCheck();
+      }
+
+      function shouldPromote(pieceType, side, fromY, toY) {
+        const must = mustPromote(pieceType, side, toY);
+        if (must) return true;
+        if (!PROMOTION_ELIGIBLE.has(pieceType)) return false;
+        if (!canPromote(pieceType, side, fromY, toY)) return false;
+        return confirm('成りますか？');
+      }
+
+      function canPromote(pieceType, side, fromY, toY) {
+        return isPromotionZone(side, fromY) || isPromotionZone(side, toY);
+      }
+
+      function mustPromote(pieceType, side, toY) {
+        if (pieceType === PIECE.FUHYO || pieceType === PIECE.KYOSHA) {
+          return side === 'SENTE' ? toY === BOARD_SIZE - 1 : toY === 0;
+        }
+        if (pieceType === PIECE.KEIMA) {
+          return side === 'SENTE' ? toY >= BOARD_SIZE - 2 : toY <= 1;
+        }
+        return false;
+      }
+
+      function isPromotionZone(side, y) {
+        if (side === 'SENTE') {
+          return y >= BOARD_SIZE - 3;
+        }
+        return y <= 2;
+      }
+
+      function renderHands() {
+        for (const side of /** @type const */ (['SENTE', 'GOTE'])) {
+          const container = handEl[side];
+          container.innerHTML = '';
+          if (captured[side].length === 0) {
+            const empty = document.createElement('span');
+            empty.textContent = 'なし';
+            container.appendChild(empty);
+            continue;
+          }
+          const grouped = Object.groupBy ? Object.groupBy(captured[side], type => type) : groupByPolyfill(captured[side]);
+          for (const [type, list] of Object.entries(grouped)) {
+            const span = document.createElement('span');
+            span.textContent = `${pieceLabel(type)} ×${list.length}`;
+            container.appendChild(span);
+          }
+        }
+      }
+
+      function groupByPolyfill(items) {
+        const map = {};
+        for (const item of items) {
+          if (!map[item]) {
+            map[item] = [];
+          }
+          map[item].push(item);
+        }
+        return map;
+      }
+
+      function updateTurnIndicator() {
+        turnIndicatorEl.textContent = turn === 'SENTE' ? '先手' : '後手';
+      }
+
+      function updateStatus() {
+        statusMessageEl.textContent = `${turn === 'SENTE' ? '先手' : '後手'}の手番です。駒を選んでください。`;
+      }
+
+      function checkForCheck() {
+        if (inCheck(boardState, turn)) {
+          statusMessageEl.textContent += ' 王手がかかっています！';
+        }
+      }
+
+      function passTurn() {
+        turn = opposite(turn);
+        selectedSquare = null;
+        legalMoves = [];
+        renderBoard();
+        updateTurnIndicator();
+        updateStatus();
+        checkForCheck();
+      }
+
+      resetButton.addEventListener('click', () => {
+        if (confirm('初期配置に戻しますか？')) {
+          resetGame();
+        }
+      });
+
+      passButton.addEventListener('click', passTurn);
+
+      // 初期描画
+      renderBoard();
+      updateTurnIndicator();
+      updateStatus();
+      renderHands();
+      checkForCheck();
+
+      // デバッグ用にエクスポート
+      window.shogiDebug = {
+        get board() {
+          return cloneBoardState();
+        },
+        get turn() {
+          return turn;
+        },
+        listMovesFor(side) {
+          return generatePseudoLegalMoves(boardState, side);
+        }
+      };
+    </script>
+  </body>
+</html>
