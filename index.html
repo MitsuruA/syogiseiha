@@ -323,8 +323,8 @@
           { side: 'SENTE', type: PIECE.KEIMA },
           { side: 'SENTE', type: PIECE.KYOSHA }
         ];
-        board[1][1] = { side: 'SENTE', type: PIECE.HISHA };
-        board[1][7] = { side: 'SENTE', type: PIECE.KAKUGYO };
+        board[1][7] = { side: 'SENTE', type: PIECE.HISHA };
+        board[1][1] = { side: 'SENTE', type: PIECE.KAKUGYO };
         board[2] = Array.from({ length: BOARD_SIZE }, () => ({ side: 'SENTE', type: PIECE.FUHYO }));
 
         // 後手側（y=8 が相手陣最下段＝盤の上）
@@ -339,8 +339,8 @@
           { side: 'GOTE', type: PIECE.KEIMA },
           { side: 'GOTE', type: PIECE.KYOSHA }
         ];
-        board[7][7] = { side: 'GOTE', type: PIECE.HISHA };
-        board[7][1] = { side: 'GOTE', type: PIECE.KAKUGYO };
+        board[7][1] = { side: 'GOTE', type: PIECE.HISHA };
+        board[7][7] = { side: 'GOTE', type: PIECE.KAKUGYO };
         board[6] = Array.from({ length: BOARD_SIZE }, () => ({ side: 'GOTE', type: PIECE.FUHYO }));
 
         return board;
