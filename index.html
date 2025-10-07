@@ -77,6 +77,8 @@
         height: 100%;
         padding: 0;
         cursor: pointer;
+        position: relative;
+        z-index: 1;
       }
 
       .square button:focus-visible {
@@ -191,6 +193,7 @@
         position: absolute;
         font-size: 0.65rem;
         color: rgba(0, 0, 0, 0.45);
+        pointer-events: none;
       }
 
       .coords.file {
