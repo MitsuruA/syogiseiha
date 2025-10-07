@@ -158,10 +158,29 @@
         font-size: 0.95rem;
       }
 
-      .hands span {
-        padding: 0.2rem 0.6rem;
+      .hand-piece {
+        appearance: none;
+        border: none;
         border-radius: 999px;
+        padding: 0.2rem 0.6rem;
         background: rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+
+      .hand-piece:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.16);
+        transform: translateY(-1px);
+      }
+
+      .hand-piece:disabled {
+        cursor: default;
+        opacity: 0.5;
+      }
+
+      .hand-piece.selected {
+        background: rgba(65, 173, 255, 0.35);
+        box-shadow: 0 0 0 2px rgba(65, 173, 255, 0.35);
       }
 
       .controls {
@@ -299,6 +318,7 @@
       let boardState = createInitialBoard();
       let turn = 'SENTE';
       let selectedSquare = null;
+      let selectedDropPiece = null;
       let legalMoves = [];
       const captured = { SENTE: [], GOTE: [] };
 
@@ -350,6 +370,7 @@
         boardState = createInitialBoard();
         turn = 'SENTE';
         selectedSquare = null;
+        selectedDropPiece = null;
         legalMoves = [];
         captured.SENTE = [];
         captured.GOTE = [];
@@ -464,13 +485,24 @@
         const cell = boardState[y][x];
 
         const move = legalMoves.find(mv => mv.to.x === x && mv.to.y === y);
-        if (move && selectedSquare) {
-          handleMove(selectedSquare, move);
+        if (move) {
+          if (move.drop) {
+            handleDrop(move);
+          } else if (selectedSquare) {
+            handleMove(selectedSquare, move);
+          }
+          return;
+        }
+
+        if (selectedDropPiece && !(cell && cell.side === turn)) {
+          statusMessageEl.textContent = 'そのマスには打てません。別のマスを選んでください。';
+          renderBoard();
           return;
         }
 
         if (cell && cell.side === turn) {
           selectedSquare = { x, y };
+          selectedDropPiece = null;
           const pseudo = generatePseudoLegalMovesForSquare(boardState, x, y);
           legalMoves = filterIllegalMoves(boardState, pseudo, turn);
           if (legalMoves.length === 0) {
@@ -480,6 +512,7 @@
           }
         } else {
           selectedSquare = null;
+          selectedDropPiece = null;
           legalMoves = [];
           if (cell && cell.side !== turn) {
             statusMessageEl.textContent = '相手の駒です。自分の駒を選択してください。';
@@ -520,6 +553,7 @@
         boardState = applyMove(boardState, moveTo, turn);
         turn = opposite(turn);
         selectedSquare = null;
+        selectedDropPiece = null;
         legalMoves = [];
         renderBoard();
         renderHands();
@@ -569,9 +603,19 @@
           }
           const grouped = Object.groupBy ? Object.groupBy(captured[side], type => type) : groupByPolyfill(captured[side]);
           for (const [type, list] of Object.entries(grouped)) {
-            const span = document.createElement('span');
-            span.textContent = `${pieceLabel(type)} ×${list.length}`;
-            container.appendChild(span);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'hand-piece';
+            button.textContent = `${pieceLabel(type)} ×${list.length}`;
+            if (side !== turn) {
+              button.disabled = true;
+            } else {
+              button.addEventListener('click', () => selectHandPiece(type));
+              if (selectedDropPiece === type) {
+                button.classList.add('selected');
+              }
+            }
+            container.appendChild(button);
           }
         }
       }
@@ -604,8 +648,85 @@
       function passTurn() {
         turn = opposite(turn);
         selectedSquare = null;
+        selectedDropPiece = null;
         legalMoves = [];
         renderBoard();
+        updateTurnIndicator();
+        updateStatus();
+        checkForCheck();
+      }
+
+      function selectHandPiece(type) {
+        const hasPiece = captured[turn].some(t => t === type);
+        if (!hasPiece) {
+          statusMessageEl.textContent = 'その持ち駒はありません。';
+          return;
+        }
+
+        if (selectedDropPiece === type) {
+          selectedDropPiece = null;
+          legalMoves = [];
+          statusMessageEl.textContent = '駒をクリックして選択してください。';
+        } else {
+          selectedDropPiece = type;
+          selectedSquare = null;
+          const pseudoDrops = generatePseudoLegalDropMoves(boardState, type);
+          legalMoves = filterIllegalMoves(boardState, pseudoDrops, turn);
+          if (legalMoves.length === 0) {
+            statusMessageEl.textContent = `${pieceLabel(type)}を打てる合法手はありません。`;
+          } else {
+            statusMessageEl.textContent = `${pieceLabel(type)}を打つ位置を選んでください。`;
+          }
+        }
+
+        renderBoard();
+        renderHands();
+      }
+
+      function generatePseudoLegalDropMoves(board, pieceType) {
+        const moves = [];
+        for (let y = 0; y < BOARD_SIZE; y++) {
+          for (let x = 0; x < BOARD_SIZE; x++) {
+            if (!board[y][x]) {
+              moves.push({
+                drop: true,
+                piece: pieceType,
+                to: { x, y }
+              });
+            }
+          }
+        }
+        return moves;
+      }
+
+      function handleDrop(move) {
+        const pieceIndex = captured[turn].findIndex(t => t === move.piece);
+        if (pieceIndex === -1) {
+          statusMessageEl.textContent = '持ち駒がありません。';
+          selectedDropPiece = null;
+          legalMoves = [];
+          renderHands();
+          renderBoard();
+          return;
+        }
+
+        const moveTo = { ...move };
+
+        captured[turn].splice(pieceIndex, 1);
+
+        moveSound.currentTime = 0;
+        const playPromise = moveSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
+        }
+
+        boardState = applyMove(boardState, moveTo, turn);
+        turn = opposite(turn);
+        selectedSquare = null;
+        selectedDropPiece = null;
+        legalMoves = [];
+        renderBoard();
+        renderHands();
         updateTurnIndicator();
         updateStatus();
         checkForCheck();
